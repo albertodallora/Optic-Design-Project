@@ -44,7 +44,7 @@ def grabframes(nframes, cameraIndex=0):
 
     return imgs
 
-def sharpness_opt():
+def sharpness_opt(init_set):
     from dm.thorlabs.dm import ThorlabsDM
 
     with ThorlabsDM() as dm:
@@ -59,7 +59,7 @@ def sharpness_opt():
         C_reg = 1
         C_pos = 1
         C_norm = 1
-        opt_set = np.zeros(shape=(43, 1))
+        opt_set = init_set
 
         # Optimization process
         while (gain) > threshold:
@@ -102,7 +102,8 @@ if __name__ == "__main__":
 
     with ThorlabsDM() as dm:
         #Sharpness Optimization
-        opt_set, max_sharp = sharpness_opt()
+        opt_set, max_sharp = sharpness_opt(np.zeros(shape=(43, 1)))     #Static aberrations
+        #opt_set, max_sharp = sharpness_opt(np.random.uniform(-1, 1, size=len(dm)))     #Random aberration
 
         # Edge Sharpness Optimization
 
