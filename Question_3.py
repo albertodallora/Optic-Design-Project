@@ -90,7 +90,7 @@ def sharpness_opt(init_set):
         return opt_set, opt_sharp
 
 
-def half_width_opt():
+def half_width_opt(init_set):
     from dm.thorlabs.dm import ThorlabsDM
 
     with ThorlabsDM() as dm:
@@ -138,7 +138,7 @@ def half_width_opt():
         return opt_set, opt_r
 
 
-def sharpness_edge_opt():
+def sharpness_edge_opt(init_set):
     from dm.thorlabs.dm import ThorlabsDM
 
     with ThorlabsDM() as dm:
