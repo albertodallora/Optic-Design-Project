@@ -47,8 +47,6 @@ def grabframes(nframes, cameraIndex=0):
 
 
 def sharpness_opt(init_set):
-
-
     # Sharpness Metric
     threshold = 0.2
     gain = 1
@@ -66,19 +64,21 @@ def sharpness_opt(init_set):
         DM_set = opt_set + np.random.uniform(-step, step, size=len(dm))  # Random walk
         dm.setActuators(DM_set)
         img = grabframes(5, Camera_Index)
-        x_intens = 0
-        y_intens = 0
+
         # Compute centroid and sharpness
-        intens_sum = 0
-        for i in range(1024):
-            for k in range(1280):
-                sharpness = sharpness + img[-1, i, k] ** 2
-                x_intens = x_intens + k * img[-1, i, k]
-                y_intens = y_intens + i * img[-1, i, k]
-                intens_sum += 1
+        I, N = np.meshgrid(np.arange(1024), np.arange(1280))
+
+        # Compute centroid
+        x_intens = (I * img[-1]).sum()
+        y_intens = (N * img[-1]).sum()
+        intens_sum = img[-1].sum()
         centroid_x = x_intens / intens_sum
         centroid_y = y_intens / intens_sum
-        positioning = np.sqrt((centroid_x-640) ** 2 + (centroid_y-512) ** 2)
+        positioning = np.sqrt(centroid_x-640 ** 2 + centroid_y-512 ** 2)
+
+        #Compute Sharpness
+        sharpness = (img[-1]**2).sum()
+
         obj = -C_norm * sharpness + C_reg * np.linalg.norm(DM_set) + C_pos * positioning
         # If the result has improved, store it
         if obj < min_obj:
@@ -107,23 +107,17 @@ def half_width_opt(init_set):
         DM_set = opt_set + np.random.uniform(-step, step, size=len(dm))  # Random walk
         dm.setActuators(DM_set)
         img = grabframes(3, Camera_Index)
-        x_intens = 0
-        y_intens = 0
+
         # Compute centroid
-        intens_sum = 0
-        for i in range(1024):
-            for k in range(1280):
-                x_intens = x_intens + k * img[-1, i, k]
-                y_intens = y_intens + i * img[-1, i, k]
-                intens_sum += 1
+        x_intens = (I * img[-1]).sum()
+        y_intens = (N * img[-1]).sum()
+        intens_sum = img[-1].sum()
         centroid_x = x_intens / intens_sum
         centroid_y = y_intens / intens_sum
-        positioning = np.sqrt((centroid_x-640) ** 2 + (centroid_y-512) ** 2)
+        positioning = np.sqrt(centroid_x-640 ** 2 + centroid_y-512 ** 2)
+
         #Compute half-width r
-        for i in range(1024):
-            for k in range(1280):
-                num_sum = num_sum + img[-1, i ,k]*((k-centroid_x)**2+(i-centroid_y)**2)
-        r = np.sqrt(num_sum/intens_sum)
+        r = np.sqrt((img[-1]*((I-centroid_x)**2+(N-centroid_y)**2)).sum()/intens_sum)
 
         obj = C_norm * r + C_reg * np.linalg.norm(DM_set) + C_pos * positioning
         # If the result has improved, store it
@@ -154,23 +148,17 @@ def sharpness_edge_opt(init_set):
         DM_set = opt_set + np.random.uniform(-step, step, size=len(dm))  # Random walk
         dm.setActuators(DM_set)
         img = grabframes(5, Camera_Index)
-        x_intens = 0
-        y_intens = 0
+
         # Compute centroid
-        intens_sum = 0
-        for i in range(1024):
-            for k in range(1280):
-                x_intens = x_intens + k * img[-1, i, k]
-                y_intens = y_intens + i * img[-1, i, k]
-                intens_sum += 1
+        x_intens = (I * img[-1]).sum()
+        y_intens = (N * img[-1]).sum()
+        intens_sum = img[-1].sum()
         centroid_x = x_intens / intens_sum
         centroid_y = y_intens / intens_sum
-        positioning = np.sqrt((centroid_x-640) ** 2 + (centroid_y-512) ** 2)
+        positioning = np.sqrt(centroid_x-640 ** 2 + centroid_y-512 ** 2)
+
         #Compute half-width S_edge
-        for i in range(1023):
-            for k in range(1279):
-                num_sum = num_sum + (img[-1, i+1 ,k]-img[-1, i ,k])**2+(img[-1, i ,k+1]-img[-1, i ,k])**2
-        S_edge = num_sum/intens_sum
+        S_edge = np.sqrt(((img[-1]-np.roll(img[-1],1,axis=0))**2+(img[-1]-np.roll(img[-1],1,axis=1))**2).sum()/intens_sum)
 
         obj = -C_norm * S_edge + C_reg * np.linalg.norm(DM_set) + C_pos * positioning
         # If the result has improved, store it
